@@ -29,10 +29,12 @@ client.on("message", async (message) => {
   const parsed = parseInt(message.content)
   if (original == parsed && parsed >= 0) {
     // Record to DB
-    await record(pgClient, message)
+    let res = await record(pgClient, message)
 
     // Respond
-    respond(pgClient, message)
+    if (res) {
+      respond(pgClient, message)
+    }
   }
 })
 

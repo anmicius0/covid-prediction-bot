@@ -3,13 +3,14 @@ module.exports = {
     // Check
     // Check time
     const date = new Date()
-    if (date.getUTCHours() === 7) {
+    if (date.getUTCHours() === 6) {
       if (date.getUTCMinutes() >= 0 && date.getUTCMinutes() <= 30) {
         // Invalid
         message.react("🚫")
         message.channel.send(
           "🚫 Guesses between 14:00 to 14:30 are not allowed."
         )
+        return false
       }
     }
 
@@ -40,6 +41,8 @@ module.exports = {
         [guild, user, name, cases, date]
       )
     }
+
+    return true
   },
 
   respond: async (pgClient, message) => {
