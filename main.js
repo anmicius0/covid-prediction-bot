@@ -14,12 +14,19 @@ const pgClient = new pg.Client({
 })
 pgClient.connect()
 
+// Cron job
+var cron = require("node-cron")
+const fetch = require("node-fetch")
+process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = "0"
+
 // Import my own functions
-const { record, respond } = require("./basic")
+const { record, respond, get_cases } = require("./basic")
 
 // On ready
 client.on("ready", async () => {
   console.log("Hello, world")
+  let cases = await get_cases(fetch)
+  console.log(cases)
 })
 
 // On message
@@ -36,6 +43,13 @@ client.on("message", async (message) => {
       respond(pgClient, message)
     }
   }
+})
+
+// Reveal the result everyday
+cron.schedule("20 14 * * *", () => {
+  // Fetch cases
+  // Fetch DB
+  // Announce
 })
 
 client.login(process.env.BOT_TOKEN)

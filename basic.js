@@ -69,4 +69,16 @@ module.exports = {
 
     message.channel.send(`\`\`\`${content}\`\`\``)
   },
+
+  get_cases: async (fetch) => {
+    // Fetch Yahoo! News
+    const res = await fetch(
+      "https://news.campaign.yahoo.com.tw/2019-nCoV/index.php"
+    )
+
+    // With the magic of regexp
+    const pattern = /本土病例[^境]+<div class="num _small">(\d+)<\/div>/gs
+    const cases = pattern.exec(await res.text())[1]
+    return cases
+  },
 }
