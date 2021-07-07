@@ -26,6 +26,7 @@ const {
   get_cases,
   get_predictions,
   announce,
+  cleanUp,
 } = require("./basic")
 
 // On ready
@@ -59,6 +60,10 @@ cron.schedule("20 14 * * *", async () => {
 
   // Announce
   announce(client, cases, channels)
-})
 
+  // leaderBoard()
+
+  // Clean up the DB
+  cleanUp(pgClient)
+})
 client.login(process.env.BOT_TOKEN)

@@ -179,4 +179,14 @@ module.exports = {
       channel.send(`\`\`\`${content}\`\`\``)
     })
   },
+
+  cleanUp: (pgClient) => {
+    /**
+     * Remove all previous prediction
+     * @param {PG client} pgClient - Connection to DB
+     */
+
+    const date = new Date()
+    pgClient.query(`DELETE FROM prediction WHERE "date"=$1`, [date])
+  },
 }
