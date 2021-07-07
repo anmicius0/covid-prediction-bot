@@ -55,10 +55,10 @@ cron.schedule("20 14 * * *", async () => {
   const cases = await get_cases(fetch)
 
   // Fetch DB
-  const records = await get_predictions(pgClient)
+  const channels = await get_predictions(pgClient)
 
   // Announce
-  announce(client, cases, records)
+  announce(client, cases, channels)
 })
 
 client.login(process.env.BOT_TOKEN)

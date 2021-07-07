@@ -1,5 +1,12 @@
 module.exports = {
   record: async (pgClient, message) => {
+    /**
+     * Store the prediction to DB
+     * @param {node-postgres client} pgClient - The connection to the database
+     * @param {message} message - The user message (the prediction)
+     * @return {boolean} result - Indicating whether the process was successful
+     */
+
     // Check
     // Check time
     const date = new Date()
@@ -46,6 +53,12 @@ module.exports = {
   },
 
   reply: async (pgClient, message) => {
+    /**
+     * Reply the current status of that channel
+     * @param {node-postgres client} pgClient - The connection to the database
+     * @param {message} message - The user message (the prediction)
+     */
+
     // Validate the prediction
     message.react("✅")
 
@@ -59,18 +72,19 @@ module.exports = {
 
     let content = `js\n明日確診人數\n`
     rows.forEach(
-      (row) =>
-        (content += `${row.name}  ${row.cases.slice(
-          0,
-          row.cases.length - 3
-        )}\n`)
+      (row) => (content += `${row.name}  ${row.cases.slice(0, -3)}\n`)
     )
-    console.log(content)
 
     message.channel.send(`\`\`\`${content}\`\`\``)
   },
 
   get_cases: async (fetch) => {
+    /**
+     * Return the latest local case number
+     * @param {fetch object} fetch
+     * @return {int} cases - Case number
+     */
+
     // Fetch Yahoo! News
     const res = await fetch(
       "https://news.campaign.yahoo.com.tw/2019-nCoV/index.php"
@@ -83,6 +97,12 @@ module.exports = {
   },
 
   get_predictions: async (pgClient) => {
+    /**
+     * Get predictions of all channels from DB
+     * @param {node-postgres client} pgClient - The connection to the database
+     * @return {dictionary} channels - {guild: [predictions...] ...}
+     */
+
     // Get all the channel
     const date = new Date()
     let { rows } = await pgClient.query(
@@ -91,20 +111,27 @@ module.exports = {
     )
 
     // Build records for each channel
-    let records = {}
+    let channels = {}
     rows.forEach((row) => {
       const guild = row.guild
-      if (!records[guild]) {
-        records[guild] = [row]
+      if (!channels[guild]) {
+        channels[guild] = [row]
       } else {
-        records[guild].push(row)
+        channels[guild].push(row)
       }
     })
-    return records
+    return channels
   },
 
-  announce: (client, cases, records) => {
-    Object.keys(records).forEach((guild) => {
+  announce: (client, cases, channels) => {
+    /**
+     * Get predictions of all channels from DB
+     * @param {Discord client} client - Connection to Discord
+     * @param {int} cases - Current case number
+     * @param {dictionary} channels - predictions from different channels
+     */
+
+    Object.keys(channels).forEach((guild) => {
       // Establish the connection to the channel
       const channel = client.channels.cache.find(
         (channel) => channel.id === guild
@@ -112,11 +139,11 @@ module.exports = {
 
       // Parsing the message
       const date = new Date()
-      let content = `\`\`\`js\n${date.getFullYear()}-${date.getMonth()}-${date.getDate()}\n`
+      let content = `js\n${date.getFullYear()}-${date.getMonth()}-${date.getDate()}\n`
 
       // Get max name length
       let length = 0
-      records[guild].forEach((row) => {
+      channels[guild].forEach((row) => {
         if (row.name.length > length) {
           length = row.name.length
         }
@@ -125,7 +152,7 @@ module.exports = {
 
       let winners = []
       let counter = 9999
-      records[guild].forEach((row) => {
+      channels[guild].forEach((row) => {
         // Username
         content += `${row.name}`
         // Padding
@@ -146,10 +173,10 @@ module.exports = {
 
       content += `result: ${cases},  `
       winners.forEach((winner) => (content += `${winner} `))
-      content += `wins\`\`\``
+      content += `wins`
 
       // Send <3
-      channel.send(content)
+      channel.send(`\`\`\`${content}\`\`\``)
     })
   },
 }
