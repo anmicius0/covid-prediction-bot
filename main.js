@@ -20,13 +20,17 @@ const fetch = require("node-fetch")
 process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = "0"
 
 // Import my own functions
-const { record, respond, get_cases } = require("./basic")
+const {
+  record,
+  reply,
+  get_cases,
+  get_predictions,
+  announce,
+} = require("./basic")
 
 // On ready
-client.on("ready", async () => {
+client.on("ready", () => {
   console.log("Hello, world")
-  let cases = await get_cases(fetch)
-  console.log(cases)
 })
 
 // On message
@@ -38,18 +42,23 @@ client.on("message", async (message) => {
     // Record to DB
     let res = await record(pgClient, message)
 
-    // Respond
+    // Reply
     if (res) {
-      respond(pgClient, message)
+      reply(pgClient, message)
     }
   }
 })
 
 // Reveal the result everyday
-cron.schedule("20 14 * * *", () => {
+cron.schedule("20 14 * * *", async () => {
   // Fetch cases
+  const cases = await get_cases(fetch)
+
   // Fetch DB
+  const records = await get_predictions(pgClient)
+
   // Announce
+  announce(client, cases, records)
 })
 
 client.login(process.env.BOT_TOKEN)

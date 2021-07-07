@@ -45,7 +45,7 @@ module.exports = {
     return true
   },
 
-  respond: async (pgClient, message) => {
+  reply: async (pgClient, message) => {
     // Validate the prediction
     message.react("✅")
 
@@ -79,6 +79,77 @@ module.exports = {
     // With the magic of regexp
     const pattern = /本土病例[^境]+<div class="num _small">(\d+)<\/div>/gs
     const cases = pattern.exec(await res.text())[1]
-    return cases
+    return parseInt(cases)
+  },
+
+  get_predictions: async (pgClient) => {
+    // Get all the channel
+    const date = new Date()
+    let { rows } = await pgClient.query(
+      `SELECT "guild", "name", "cases" FROM "prediction" WHERE "date"=$1`,
+      [date]
+    )
+
+    // Build records for each channel
+    let records = {}
+    rows.forEach((row) => {
+      const guild = row.guild
+      if (!records[guild]) {
+        records[guild] = [row]
+      } else {
+        records[guild].push(row)
+      }
+    })
+    return records
+  },
+
+  announce: (client, cases, records) => {
+    Object.keys(records).forEach((guild) => {
+      // Establish the connection to the channel
+      const channel = client.channels.cache.find(
+        (channel) => channel.id === guild
+      )
+
+      // Parsing the message
+      const date = new Date()
+      let content = `\`\`\`js\n${date.getFullYear()}-${date.getMonth()}-${date.getDate()}\n`
+
+      // Get max name length
+      let length = 0
+      records[guild].forEach((row) => {
+        if (row.name.length > length) {
+          length = row.name.length
+        }
+      })
+      length += 3
+
+      let winners = []
+      let counter = 9999
+      records[guild].forEach((row) => {
+        // Username
+        content += `${row.name}`
+        // Padding
+        for (let i = 0; i < length - row.name.length; i++) {
+          content += ` `
+        }
+        // Case and count
+        content += `${row.cases.slice(0, -3)}(${row.cases - cases})\n`
+
+        // Store winner
+        if (Math.abs(row.cases - cases) < counter) {
+          counter = Math.abs(row.cases - cases)
+          winners = [row.name]
+        } else if (Math.abs(row.cases - cases) === counter) {
+          winners.append(row.name)
+        }
+      })
+
+      content += `result: ${cases},  `
+      winners.forEach((winner) => (content += `${winner} `))
+      content += `wins\`\`\``
+
+      // Send <3
+      channel.send(content)
+    })
   },
 }
