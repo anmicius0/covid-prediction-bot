@@ -9,5 +9,8 @@
   },
   "devDependencies": {
     "eslint": "^7.29.0"
+  },
+  "scripts": {
+    "start": "node main.js"
   }
 }
