@@ -169,7 +169,7 @@ module.exports = {
           counter = Math.abs(prediction.cases - cases)
           winners = [prediction.name]
         } else if (Math.abs(prediction.cases - cases) === counter) {
-          winners.append(prediction.name)
+          winners.push(prediction.name)
         }
       })
 
@@ -221,7 +221,6 @@ module.exports = {
      * @param {dictionary} channels - predictions from different channels
      */
 
-    console.log(channels)
     Object.keys(channels).forEach((guild) => {
       let first = []
       let second = []
