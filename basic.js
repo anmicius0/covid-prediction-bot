@@ -106,7 +106,7 @@ module.exports = {
     // Get all the channel
     const date = new Date()
     let { rows } = await pgClient.query(
-      `SELECT "guild", "name", "cases" FROM "prediction" WHERE "date"=$1`,
+      `SELECT * FROM "prediction" WHERE "date"=$1`,
       [date]
     )
 
@@ -143,31 +143,33 @@ module.exports = {
 
       // Get max name length
       let length = 0
-      channels[guild].forEach((row) => {
-        if (row.name.length > length) {
-          length = row.name.length
+      channels[guild].forEach((prediction) => {
+        if (prediction.name.length > length) {
+          length = prediction.name.length
         }
       })
       length += 3
 
       let winners = []
       let counter = 9999
-      channels[guild].forEach((row) => {
+      channels[guild].forEach((prediction) => {
         // Username
-        content += `${row.name}`
+        content += `${prediction.name}`
         // Padding
-        for (let i = 0; i < length - row.name.length; i++) {
+        for (let i = 0; i < length - prediction.name.length; i++) {
           content += ` `
         }
         // Case and count
-        content += `${row.cases.slice(0, -3)}(${row.cases - cases})\n`
+        content += `${prediction.cases.slice(0, -3)}(${
+          prediction.cases - cases
+        })\n`
 
         // Store winner
-        if (Math.abs(row.cases - cases) < counter) {
-          counter = Math.abs(row.cases - cases)
-          winners = [row.name]
-        } else if (Math.abs(row.cases - cases) === counter) {
-          winners.append(row.name)
+        if (Math.abs(prediction.cases - cases) < counter) {
+          counter = Math.abs(prediction.cases - cases)
+          winners = [prediction.name]
+        } else if (Math.abs(prediction.cases - cases) === counter) {
+          winners.append(prediction.name)
         }
       })
 
@@ -188,5 +190,152 @@ module.exports = {
 
     const date = new Date()
     pgClient.query(`DELETE FROM prediction WHERE "date"=$1`, [date])
+  },
+
+  updateLeaderBoard: function (pgClient, cases, channels) {
+    /**
+     * Show leader board
+     * @param {node-postgres client} pgClient - The connection to the database
+     * @param {int} cases - Current case number
+     * @param {dictionary} channels - predictions from different channels
+     */
+
+    console.log(channels)
+    Object.keys(channels).forEach((guild) => {
+      let first = []
+      let second = []
+      let other = []
+
+      // Determine the number standard of each level
+      let standards = new Set()
+      channels[guild].forEach((prediction) => {
+        standards.add(Math.abs(prediction.cases - cases))
+      })
+      standards = Array.from(standards).sort().slice(0, 3)
+
+      // add prediction to its level
+      channels[guild].forEach((prediction) => {
+        switch (Math.abs(prediction.cases - cases)) {
+          case standards[0]:
+            first.push(prediction)
+            break
+          case standards[1]:
+            second.push(prediction)
+            break
+          default:
+            other.push(prediction)
+        }
+      })
+
+      // update balance
+      first.forEach((prediction) => {
+        module.exports.updateBalance(
+          pgClient,
+          prediction.guild,
+          prediction.user,
+          prediction.name,
+          20
+        )
+
+        module.exports.updateBalance(
+          pgClient,
+          prediction.guild,
+          prediction.user,
+          prediction.name,
+          20
+        )
+      })
+
+      second.forEach((prediction) => {
+        module.exports.updateBalance(
+          pgClient,
+          prediction.guild,
+          prediction.user,
+          prediction.name,
+          15
+        )
+      })
+
+      other.forEach((prediction) => {
+        module.exports.updateBalance(
+          pgClient,
+          prediction.guild,
+          prediction.user,
+          prediction.name,
+          10
+        )
+      })
+
+      // Update cases
+      first
+        .concat(second)
+        .concat(other)
+        .forEach((prediction) => {
+          module.exports.updateCases(
+            pgClient,
+            prediction.guild,
+            prediction.user,
+            Math.abs(prediction.cases - cases)
+          )
+        })
+    })
+  },
+
+  updateBalance: async (pgClient, guild, user, name, change) => {
+    /**
+     * Update balance
+     * @param {node-postgres client} pgClient - The connection to the database
+     * @param {text} guild
+     * @param {text} user - user id
+     * @param {text} name - user name
+     * @param {int} change - Amount of balance change
+     */
+
+    const { rows } = await pgClient.query(
+      `SELECT * FROM account WHERE "guild"=$1 AND "user"=$2`,
+      [guild, user]
+    )
+
+    // If no account, create one
+    if (rows.length === 0) {
+      await pgClient.query(
+        `INSERT INTO account("guild", "user", "name", "balance") VALUES ($1, $2, $3, $4)`,
+        [guild, user, name, change]
+      )
+    }
+    // If have account, update the balance
+    else {
+      await pgClient.query(
+        `UPDATE account SET "balance"=$1 WHERE "guild"=$2 AND "user"=$3`,
+        [rows[0].balance + change, guild, user]
+      )
+    }
+  },
+
+  updateCases: async (pgClient, guild, user, cases) => {
+    /**
+     * Update cases and times
+     * @param {node-postgres client} pgClient - The connection to the database
+     * @param {text} guild
+     * @param {text} user - user id
+     * @param {int} cases - Amount of cases added
+     */
+
+    const { rows } = await pgClient.query(
+      `SELECT * FROM account WHERE "guild"=$1 AND "user"=$2`,
+      [guild, user]
+    )
+
+    // If no account, create one
+    if (rows.length === 0) {
+      return false
+    }
+    // If have account, update the balance
+    else {
+      await pgClient.query(
+        `UPDATE account SET "cases"=$1, "times"=$2 WHERE "guild"=$3 AND "user"=$4`,
+        [rows[0].cases + cases, rows[0].times + 1, guild, user]
+      )
+    }
   },
 }

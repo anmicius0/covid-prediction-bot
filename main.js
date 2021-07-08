@@ -27,11 +27,21 @@ const {
   get_predictions,
   announce,
   cleanUp,
+  updateLeaderBoard,
 } = require("./basic")
 
 // On ready
-client.on("ready", () => {
+client.on("ready", async () => {
   console.log("Hello, world")
+
+  // Fetch cases
+  const cases = await get_cases(fetch)
+
+  // Fetch DB
+  const channels = await get_predictions(pgClient)
+
+  // Show leader board
+  updateLeaderBoard(pgClient, cases, channels)
 })
 
 // On message
@@ -61,7 +71,8 @@ cron.schedule("20 14 * * *", async () => {
   // Announce
   announce(client, cases, channels)
 
-  // leaderBoard()
+  // Show leader board
+  updateLeaderBoard(client, cases, channels)
 
   // Clean up the DB
   cleanUp(pgClient)
