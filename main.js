@@ -49,6 +49,17 @@ client.on("message", async (message) => {
       reply(pgClient, message)
     }
   }
+
+  if (original === "reveal") {
+    // Fetch cases
+    const cases = await get_cases(fetch)
+
+    // Fetch DB
+    const channels = await get_predictions(pgClient)
+
+    // Announce
+    announce(client, cases, channels)
+  }
 })
 
 // Reveal the result everyday
