@@ -1,4 +1,4 @@
-# YOUR PROJECT TITLE
+# covid-prediction-bot
 
 #### Video Demo: https://youtu.be/iqCD9mBzeGw
 
