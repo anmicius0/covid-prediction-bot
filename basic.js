@@ -70,7 +70,7 @@ module.exports = {
       [guild, date]
     )
 
-    let content = `js\n明日確診人數\n`
+    let content = `js\nCurrent prediction for tomorrow:\n`
     rows.forEach(
       (row) => (content += `${row.name}  ${row.cases.slice(0, -3)}\n`)
     )
@@ -190,27 +190,6 @@ module.exports = {
 
     const date = new Date()
     pgClient.query(`DELETE FROM prediction WHERE "date"=$1`, [date])
-  },
-
-  aannounceLeaderBoard: async (pgClient) => {
-    // Query all the account
-    const { rows } = await pgClient.query(`SELECT * FROM prediction`)
-
-    // Organized in channels
-    let channels = {}
-    rows.forEach((row) => {
-      const guild = row.guild
-      if (!channels[guild]) {
-        channels[guild] = [row]
-      } else {
-        channels[guild].push(row)
-      }
-    })
-
-    // Parse message
-    Object.keys(channels).forEach((guild) => {})
-
-    // send <3
   },
 
   updateLeaderBoard: function (pgClient, cases, channels) {
