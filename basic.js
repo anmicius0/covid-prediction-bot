@@ -139,7 +139,9 @@ module.exports = {
 
       // Parsing the message
       const date = new Date()
-      let content = `js\n${date.getFullYear()}-${date.getMonth()}-${date.getDate()}\n`
+      let content = `js\n${date.getFullYear()}-${
+        date.getMonth() + 1
+      }-${date.getDate()}\n`
 
       // Get max name length
       let length = 0
