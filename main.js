@@ -31,8 +31,8 @@ const {
 } = require("./basic")
 
 // On ready
-client.on("ready", async () => {
-  console.log("Hello, world")
+client.on("ready", () => {
+  console.log("Bot started")
 })
 
 // On message
