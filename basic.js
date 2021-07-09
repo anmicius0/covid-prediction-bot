@@ -29,8 +29,8 @@ module.exports = {
     const name = message.author.username
 
     let query = await pgClient.query(
-      `SELECT * FROM "prediction" WHERE "guild"=$1 AND "user"=$2 AND "date"=$3`,
-      [guild, user, date]
+      `SELECT * FROM "prediction" WHERE "guild"=$1 AND "user"=$2`,
+      [guild, user]
     )
 
     // If there is one record, update it
@@ -43,9 +43,9 @@ module.exports = {
     // Else, insert the record
     else {
       await pgClient.query(
-        `INSERT INTO "prediction" ("guild", "user", "name", "cases", "date")
-          VALUES ($1, $2, $3, $4, $5)`,
-        [guild, user, name, cases, date]
+        `INSERT INTO "prediction" ("guild", "user", "name", "cases")
+          VALUES ($1, $2, $3, $4)`,
+        [guild, user, name, cases]
       )
     }
 
@@ -63,14 +63,13 @@ module.exports = {
     message.react("✅")
 
     // Show the board
-    const date = new Date()
     const guild = message.channel.id
     const { rows } = await pgClient.query(
-      `SELECT * FROM "prediction" WHERE "guild"=$1 AND "date"=$2 ORDER BY "name" ASC`,
-      [guild, date]
+      `SELECT * FROM "prediction" WHERE "guild"=$1 ORDER BY "name" ASC`,
+      [guild]
     )
 
-    let content = `js\nCurrent prediction for tomorrow:\n`
+    let content = `js\nCurrent prediction for the next round:\n`
     rows.forEach(
       (row) => (content += `${row.name}  ${row.cases.slice(0, -3)}\n`)
     )
@@ -104,11 +103,7 @@ module.exports = {
      */
 
     // Get all the channel
-    const date = new Date()
-    let { rows } = await pgClient.query(
-      `SELECT * FROM "prediction" WHERE "date"=$1`,
-      [date]
-    )
+    let { rows } = await pgClient.query(`SELECT * FROM "prediction"`)
 
     // Build records for each channel
     let channels = {}
@@ -190,8 +185,7 @@ module.exports = {
      * @param {PG client} pgClient - Connection to DB
      */
 
-    const date = new Date()
-    pgClient.query(`DELETE FROM prediction WHERE "date"=$1`, [date])
+    pgClient.query(`DELETE FROM prediction`)
   },
 
   updateLeaderBoard: function (pgClient, cases, channels) {
